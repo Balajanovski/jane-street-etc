@@ -46,20 +46,22 @@ def main():
     bid_ask_bookkeeper = BidAndAsk()
     positions = Positions()
 
-    def get_arbitrage_vale(is_buy_vale: bool) -> Dict[str, List[Order]]:
-        ret = {"buy": [], "sell": []}
-        if not("VALE" in bid_ask_bookkeeper._asks and "VALBZ" in bid_ask_bookkeeper._asks and "VALE" in bid_ask_bookkeeper._bids and "VALBZ" in bid_ask_bookkeeper._bids):
-            return ret
+    def get_arbitrage_vale(is_buy_vale: bool) -> Dict[str, int]:
+        ret = {}
 
         sell_orders = list(sorted([i.price for i in bid_ask_bookkeeper._asks["VALE" if is_buy_vale else "VALBZ"]]))
         buy_orders = list(sorted([i.price for i in bid_ask_bookkeeper._bids["VALBZ" if is_buy_vale else "VALE"]], reverse=True))
 
+        limit = min(positions.get_remaining_positions("VALE", is_buy_vale), positions.get_remaining_positions("VALBZ", not is_buy_vale))
+
         i = 0
-        while i < len(sell_orders) and i < len(buy_orders) and sell_orders[i] >= buy_orders[i]:
-            ret["buy"].append(sell_orders[i])
-            ret["sell"].append(buy_orders[i])
+        while i < len(sell_orders) and i < len(buy_orders) and sell_orders[i] >= buy_orders[i] and i < limit:
+            ret["buy"] = sell_orders[i]
+            ret["sell"] = buy_orders[i]
             i += 1
         
+        ret["quantity"] = i
+
         return ret
 
     # Store and print the "hello" message received from the exchange. This
@@ -125,6 +127,17 @@ def main():
                 for ask in
                 message["sell"]
             ], instrument)
+            
+            res = get_arbitrage_vale(True)
+            res2 = get_arbitrage_vale(False)
+            if res["quantity"] > 0:
+                exchange.send_add_message(get_order_id(), "VALE", Dir.BUY, res["buy"], res["quantity"])
+                exchange.send_add_message(get_order_id(), "VALBZ", Dir.SELL, res["sell"], res["quantity"])
+                exchange.send_convert_message(get_order_id(), "VALE", Dir.SELL, res["quantity"])
+            elif res2["quantity"] > 0:
+                exchange.send_add_message(get_order_id(), "VALE", Dir.SELL, res["sell"], res["quantity"])
+                exchange.send_add_message(get_order_id(), "VALBZ", Dir.BUY, res["buy"], res["quantity"])
+                exchange.send_convert_message(get_order_id(), "VALE", Dir.BUY, res["quantity"])
         elif message["type"] == "trade":
             bid_ask_bookkeeper.account_for_trade(message["symbol"], Order(price=message["price"], quantity=message["size"]))
 
@@ -132,32 +145,6 @@ def main():
             last_log_time = now
             bid_ask_bookkeeper.console_log()
             positions.console_log()
-        
-        res = get_arbitrage_vale(True)
-        res2 = get_arbitrage_vale(False)
-
-        if len(res["buy"]) > 0:
-            limit = min(positions.get_remaining_positions("VALE", True), positions.get_remaining_positions("VALBZ", False), len(res["buy"]))
-            if limit == 0:
-                break
-            for i in range(limit):
-                p = res["buy"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, price=p, size=1)
-            for i in range(limit):
-                p = res["sell"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.SELL, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, size = limit)
-        elif len(res2["buy"]) > 0:
-            limit = min(positions.get_remaining_positions("VALE", False), positions.get_remaining_positions("VALBZ", True), len(res2["buy"]))
-            if limit == 0:
-                break
-            for i in range(limit):
-                p = res["buy"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, price=p, size=1)
-            for i in range(limit):
-                p = res["sell"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.BUY, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, size = limit)
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
