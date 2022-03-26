@@ -97,6 +97,7 @@ def main():
                 positions.add_position(message["symbol"], message["size"])
             else:
                 positions.add_position(message["symbol"], -message["size"])
+            print(message)
         elif message["type"] == "book":
             instrument = message["symbol"]
 
