@@ -99,6 +99,8 @@ def main():
             if now > last_log_time + 1:
                 last_log_time = now
                 bid_ask_bookkeeper.console_log()
+        elif message["type"] == "trade":
+            bid_ask_bookkeeper.account_for_trade(message["symbol"], Order(price=message["price"], quantity=message["size"]));
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
