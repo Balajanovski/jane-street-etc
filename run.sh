@@ -1,1 +1,1 @@
-while true; do python3.8 bot.py --production; sleep 5; done
+while true; do PYTHONPATH=. python3.8 bot.py --production; sleep 5; done

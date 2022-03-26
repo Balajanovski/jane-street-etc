@@ -11,6 +11,9 @@ import time
 import socket
 import json
 
+from book_keeping.bid_and_ask import BidAndAsk
+from book_keeping.order import Order
+
 # ~~~~~============== CONFIGURATION  ==============~~~~~
 # Replace "REPLACEME" with your team name!
 team_name = "BETTERTHANON"
@@ -43,11 +46,8 @@ def main():
     # pick? Also, you will need to send more orders over time.
     exchange.send_add_message(order_id=1, symbol="BOND", dir=Dir.BUY, price=999, size=100)
 
-    # Set up some variables to track the bid and ask price of a symbol. Right
-    # now this doesn't track much information, but it's enough to get a sense
-    # of the VALE market.
-    vale_bid_price, vale_ask_price = None, None
-    vale_last_print_time = time.time()
+    bid_ask_bookkeeper = BidAndAsk()
+    last_log_time = time.time()
 
     # Here is the main loop of the program. It will continue to read and
     # process messages in a loop until a "close" message is received. You
@@ -63,6 +63,8 @@ def main():
     # rate-limited and ignored. Please, don't do that!
     while True:
         message = exchange.read_message()
+
+        now = time.time()
 
         # Some of the message types below happen infrequently and contain
         # important information to help you understand what your bot is doing,
@@ -80,25 +82,23 @@ def main():
         elif message["type"] == "fill":
             print(message)
         elif message["type"] == "book":
-            if message["symbol"] == "VALE":
+            instrument = message["symbol"]
 
-                def best_price(side):
-                    if message[side]:
-                        return message[side][0][0]
+            bid_ask_bookkeeper.set_bids([
+                Order(price=bid[0], quantity=bid[1])
+                for bid in
+                message["buy"]
+            ], instrument)
 
-                vale_bid_price = best_price("buy")
-                vale_ask_price = best_price("sell")
+            bid_ask_bookkeeper.set_asks([
+                Order(price=ask[0], quantity=ask[1])
+                for ask in
+                message["sell"]
+            ], instrument)
 
-                now = time.time()
-
-                if now > vale_last_print_time + 1:
-                    vale_last_print_time = now
-                    print(
-                        {
-                            "vale_bid_price": vale_bid_price,
-                            "vale_ask_price": vale_ask_price,
-                        }
-                    )
+            if now > last_log_time + 1:
+                last_log_time = now
+                bid_ask_bookkeeper.console_log()
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
