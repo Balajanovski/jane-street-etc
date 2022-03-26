@@ -21,6 +21,8 @@ class BidAndAsk:
         return self._asks[instrument]
 
     def account_for_trade(self, instrument: str, order: Order):
+        return
+
         if len(self._bids[instrument]) == 0 or self._bids[instrument][-1].price < order.price:
             target = self._asks
         else:
