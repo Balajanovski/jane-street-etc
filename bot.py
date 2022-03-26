@@ -137,17 +137,27 @@ def main():
         res2 = get_arbitrage_vale(False)
 
         if len(res["buy"]) > 0:
-            for p in res["buy"]:
+            limit = min(positions.get_remaining_positions("VALE", True), positions.get_remaining_positions("VALBZ", False), len(res["buy"]))
+            if limit == 0:
+                break
+            for i in range(limit):
+                p = res["buy"][i]
                 exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, price=p, size=1)
-            for p in res["sell"]:
+            for i in range(limit):
+                p = res["sell"][i]
                 exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.SELL, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, size = len(res["buy"]))
+            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, size = limit)
         elif len(res2["buy"]) > 0:
-            for p in res2["buy"]:
+            limit = min(positions.get_remaining_positions("VALE", False), positions.get_remaining_positions("VALBZ", True), len(res2["buy"]))
+            if limit == 0:
+                break
+            for i in range(limit):
+                p = res["buy"][i]
                 exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, price=p, size=1)
-            for p in res2["sell"]:
+            for i in range(limit):
+                p = res["sell"][i]
                 exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.BUY, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, size = len(res2["buy"]))
+            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, size = limit)
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
