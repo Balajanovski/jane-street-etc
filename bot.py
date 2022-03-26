@@ -130,14 +130,14 @@ def main():
             ask_vale, buy_vale_orders = bid_ask_bookkeeper.get_ask_price_limit("VALE", limit_buy_vale_sell_valbz)
             ask_valbz, buy_valbz_orders = bid_ask_bookkeeper.get_ask_price_limit("VALBZ", limit_buy_valbz_sell_vale)
 
-            if ask_vale + 10 < bid_valbz:
+            if ask_vale + CONVERSION_RATE < bid_valbz:
                 for order in buy_vale_orders:
                     exchange.send_add_message(get_order_id(), "VALE", Dir.BUY, order.price, order.quantity)
                 exchange.send_convert_message(get_order_id(), "VALE", Dir.SELL, limit_buy_vale_sell_valbz)
                 for order in sell_valbz_orders:
                     exchange.send_add_message(get_order_id(), "VALBZ", Dir.SELL, order.price, order.quantity)
 
-            elif ask_valbz + 10 < bid_vale:
+            elif ask_valbz + CONVERSION_RATE < bid_vale:
                 for order in buy_valbz_orders:
                     exchange.send_add_message(get_order_id(), "VALBZ", Dir.BUY, order.price, order.quantity)
                 exchange.send_convert_message(get_order_id(), "VALE", Dir.BUY, limit_buy_valbz_sell_vale)

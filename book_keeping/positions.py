@@ -3,7 +3,16 @@ import json
 
 class Positions:
     def __init__(self):
-        self._positions = {}
+        self._positions = {
+            "BOND": 0,
+            "VALBZ": 0,
+            "VALE": 0,
+            "GS": 0,
+            "MS": 0,
+            "WFC": 0,
+            "XFL": 0,
+            "CASH": 0,
+        }
         self._max_positions = {
             "BOND": 100,
             "VALBZ": 10,
