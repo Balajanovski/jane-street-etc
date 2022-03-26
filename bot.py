@@ -104,7 +104,7 @@ def main():
         elif message["type"] == "trade":
             bid_ask_bookkeeper.account_for_trade(message["symbol"], Order(price=message["price"], quantity=message["size"]))
 
-        if now > last_log_time + 1:
+        if now > last_log_time + 5:
             last_log_time = now
             bid_ask_bookkeeper.console_log()
             positions.console_log()
