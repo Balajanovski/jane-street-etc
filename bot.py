@@ -101,6 +101,8 @@ def main():
                 for ask in
                 message["sell"]
             ], instrument)
+        elif message["type"] == "trade":
+            bid_ask_bookkeeper.account_for_trade(message["symbol"], Order(price=message["price"], quantity=message["size"]))
 
         if now > last_log_time + 1:
             last_log_time = now
