@@ -49,6 +49,9 @@ def main():
     def get_arbitrage_vale(is_buy_vale: bool) -> Dict[str, int]:
         ret = {}
 
+        if "VALE" not in bid_ask_bookkeeper._asks or "VALE" not in bid_ask_bookkeeper._bids or "VALBZ" not in bid_ask_bookkeeper._asks or "VALBZ" not in bid_ask_bookkeeper._bids:
+            return {"quantity":0}
+
         sell_orders = list(sorted([i.price for i in bid_ask_bookkeeper._asks["VALE" if is_buy_vale else "VALBZ"]]))
         buy_orders = list(sorted([i.price for i in bid_ask_bookkeeper._bids["VALBZ" if is_buy_vale else "VALE"]], reverse=True))
 
@@ -127,7 +130,7 @@ def main():
                 for ask in
                 message["sell"]
             ], instrument)
-            
+
             res = get_arbitrage_vale(True)
             res2 = get_arbitrage_vale(False)
             if res["quantity"] > 0:
