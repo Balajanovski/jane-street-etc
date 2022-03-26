@@ -31,7 +31,7 @@ class BidAndAsk:
             if existing_order.price == order.price:
                 existing_order.quantity -= order.quantity
                 if existing_order.quantity == 0:
-                    target.pop(i)
+                    target[instrument].pop(i)
                 break
 
     def console_log(self):
