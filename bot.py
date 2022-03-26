@@ -6,16 +6,17 @@
 
 import argparse
 from collections import deque
-from enum import Enum
+
 import time
 import socket
 import json
 
 from book_keeping.bid_and_ask import BidAndAsk
 from book_keeping.order import Order
+from book_keeping.positions import Positions
+from book_keeping.directive import Dir
 
 # ~~~~~============== CONFIGURATION  ==============~~~~~
-# Replace "REPLACEME" with your team name!
 team_name = "BETTERTHANON"
 
 # ~~~~~============== MAIN LOOP ==============~~~~~
@@ -29,10 +30,13 @@ team_name = "BETTERTHANON"
 # code is intended to be a working example, but it needs some improvement
 # before it will start making good trades!
 
+
 def main():
     args = parse_arguments()
 
     exchange = ExchangeConnection(args=args)
+    bid_ask_bookkeeper = BidAndAsk()
+    positions = Positions()
 
     # Store and print the "hello" message received from the exchange. This
     # contains useful information about your positions. Normally you start with
@@ -40,13 +44,12 @@ def main():
     # have already bought/sold symbols and have non-zero positions.
     hello_message = exchange.read_message()
     print("First message from exchange:", hello_message)
+    for symbol in hello_message["symbols"]:
+        positions.update_position(
+            instrument=symbol["symbol"],
+            quantity=symbol["position"],
+        )
 
-    # Send an order for BOND at a good price, but it is low enough that it is
-    # unlikely it will be traded against. Maybe there is a better price to
-    # pick? Also, you will need to send more orders over time.
-    exchange.send_add_message(order_id=1, symbol="BOND", dir=Dir.BUY, price=999, size=100)
-
-    bid_ask_bookkeeper = BidAndAsk()
     last_log_time = time.time()
 
     # Here is the main loop of the program. It will continue to read and
@@ -80,7 +83,10 @@ def main():
         elif message["type"] == "reject":
             print(message)
         elif message["type"] == "fill":
-            print(message)
+            if message["dir"] == Dir.BUY:
+                positions.add_position(message["symbol"], message["size"])
+            else:
+                positions.add_position(message["symbol"], -message["size"])
         elif message["type"] == "book":
             instrument = message["symbol"]
 
@@ -96,9 +102,10 @@ def main():
                 message["sell"]
             ], instrument)
 
-            if now > last_log_time + 1:
-                last_log_time = now
-                bid_ask_bookkeeper.console_log()
+        if now > last_log_time + 1:
+            last_log_time = now
+            bid_ask_bookkeeper.console_log()
+            positions.console_log()
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
@@ -106,11 +113,6 @@ def main():
 # You probably don't need to edit anything below this line, but feel free to
 # ask if you have any questinos about what it is doing or how it works. If you
 # do need to change anything below this line, please feel free to
-
-
-class Dir(str, Enum):
-    BUY = "BUY"
-    SELL = "SELL"
 
 
 class ExchangeConnection:
