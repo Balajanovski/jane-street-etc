@@ -32,19 +32,6 @@ class BidAndAsk:
                 if existing_order.quantity == 0:
                     target[instrument].pop(i)
                 break
-    
-    def get_arbitrage_vale(self, is_buy_vale: bool) -> Dict[str, List[Order]]:
-        ret = {"buy": [], "sell": []}
-
-        sell_orders = [i.price for i in self._asks["VALE" if is_buy_vale else "VALBZ"]].sort()
-        buy_orders = [i.price for i in self._bids["VALBZ" if is_buy_vale else "VALE"]].sort(reverse=True)
-
-        i = 0
-        while i < sell_orders and i < buy_orders and sell_orders[i] >= buy_orders[i]:
-            ret["buy"].append(sell_orders[i])
-            ret["sell"].append(buy_orders[i])
-        
-        return ret
 
     def console_log(self):
         print("Bids\n------")
