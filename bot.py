@@ -48,12 +48,14 @@ def main():
 
     def get_arbitrage_vale(is_buy_vale: bool) -> Dict[str, List[Order]]:
         ret = {"buy": [], "sell": []}
+        if not("VALE" in bid_ask_bookkeeper._asks and "VALBZ" in bid_ask_bookkeeper._asks and "VALE" in bid_ask_bookkeeper._bids and "VALBZ" in bid_ask_bookkeeper._bids):
+            return ret
 
-        sell_orders = [i.price for i in bid_ask_bookkeeper._asks["VALE" if is_buy_vale else "VALBZ"]].sort()
-        buy_orders = [i.price for i in bid_ask_bookkeeper._bids["VALBZ" if is_buy_vale else "VALE"]].sort(reverse=True)
+        sell_orders = list(sorted([i.price for i in bid_ask_bookkeeper._asks["VALE" if is_buy_vale else "VALBZ"]]))
+        buy_orders = list(sorted([i.price for i in bid_ask_bookkeeper._bids["VALBZ" if is_buy_vale else "VALE"]], reverse=True))
 
         i = 0
-        while i < sell_orders and i < buy_orders and sell_orders[i] >= buy_orders[i]:
+        while i < len(sell_orders) and i < len(buy_orders) and sell_orders[i] >= buy_orders[i]:
             ret["buy"].append(sell_orders[i])
             ret["sell"].append(buy_orders[i])
         
