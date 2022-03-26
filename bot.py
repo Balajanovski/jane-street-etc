@@ -138,16 +138,16 @@ def main():
 
         if len(res["buy"]) > 0:
             for p in res["buy"]:
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=dir.BUY, price=p, size=1)
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, price=p, size=1)
             for p in res["sell"]:
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=dir.SELL, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=dir.SELL, size = len(res["buy"]))
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.SELL, price=p, size=1)
+            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, size = len(res["buy"]))
         elif len(res2["buy"]) > 0:
             for p in res2["buy"]:
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=dir.SELL, price=p, size=1)
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, price=p, size=1)
             for p in res2["sell"]:
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=dir.BUY, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=dir.BUY, size = len(res2["buy"]))
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.BUY, price=p, size=1)
+            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, size = len(res2["buy"]))
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
