@@ -1,6 +1,7 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from book_keeping.order import Order
 import json
+import dataclasses
 
 
 class BidAndAsk:
@@ -17,8 +18,20 @@ class BidAndAsk:
     def get_bids(self, instrument: str) -> List[Order]:
         return self._bids[instrument]
 
+    def get_total_bid_quantity(self, instrument: str) -> int:
+        return sum(order.quantity for order in self._bids[instrument])
+
+    def get_bid_price_limit(self, instrument: str, limit: int) -> Tuple[float, List[Order]]:
+        return self._get_generic_price_limit(self._bids[instrument], limit)
+
     def get_asks(self, instrument: str) -> List[Order]:
         return self._asks[instrument]
+
+    def get_total_ask_quantity(self, instrument: str) -> int:
+        return sum(order.quantity for order in self._asks[instrument])
+
+    def get_ask_price_limit(self, instrument: str, limit: int) -> Tuple[float, List[Order]]:
+        return self._get_generic_price_limit(self._asks[instrument], limit)
 
     def account_for_trade(self, instrument: str, order: Order):
         if len(self._bids[instrument]) == 0 or self._bids[instrument][-1].price < order.price:
@@ -35,7 +48,30 @@ class BidAndAsk:
 
     def console_log(self):
         print("Bids\n------")
-        print(json.dumps(self._bids, indent=4, sort_keys=True))
+        print(json.dumps(self._dictify(self._bids), indent=4, sort_keys=True))
 
         print("\nAsks\n------")
-        print(json.dumps(self._asks, indent=4, sort_keys=True))
+        print(json.dumps(self._dictify(self._asks), indent=4, sort_keys=True))
+
+    @staticmethod
+    def _dictify(all_orders):
+        return {
+            instrument: [dataclasses.asdict(order) for order in orders]
+            for instrument, orders in
+            all_orders.items()
+        }
+
+    @staticmethod
+    def _get_generic_price_limit(generic_orders: List[Order], limit: int) -> Tuple[float, List[Order]]:
+        price = 0
+        orders = []
+        for bid in generic_orders:
+            if limit <= 0:
+                return price, orders
+
+            ordered_quantity = min(limit, bid.quantity)
+            price += ordered_quantity * bid.price
+            limit -= ordered_quantity
+            orders.append(Order(price=bid.price, quantity=ordered_quantity))
+
+        return price, orders

@@ -24,17 +24,12 @@ class Positions:
         self._positions[instrument] += quantity
 
     def get_position(self, instrument: str) -> int:
-        return self._positions[instrument]
-    
-    def get_remaining_positions(self, instrument: str, is_buying: bool) -> int:
         if instrument not in self._positions:
             return 0
-        
-        res = self._max_positions[instrument] - self._positions[instrument]
-        if not is_buying:
-            res = -res
-        
-        return res
+        return self._positions[instrument]
+    
+    def get_remaining_positions(self, instrument: str) -> int:
+        return self._max_positions[instrument] - self.get_position(instrument)
 
     def console_log(self):
         print("Positions\n------")

@@ -20,6 +20,7 @@ from typing import List, Dict
 
 # ~~~~~============== CONFIGURATION  ==============~~~~~
 team_name = "BETTERTHANON"
+CONVERSION_RATE = 10
 
 # ~~~~~============== MAIN LOOP ==============~~~~~
 
@@ -45,22 +46,6 @@ def main():
     exchange = ExchangeConnection(args=args)
     bid_ask_bookkeeper = BidAndAsk()
     positions = Positions()
-
-    def get_arbitrage_vale(is_buy_vale: bool) -> Dict[str, List[Order]]:
-        ret = {"buy": [], "sell": []}
-        if not("VALE" in bid_ask_bookkeeper._asks and "VALBZ" in bid_ask_bookkeeper._asks and "VALE" in bid_ask_bookkeeper._bids and "VALBZ" in bid_ask_bookkeeper._bids):
-            return ret
-
-        sell_orders = list(sorted([i.price for i in bid_ask_bookkeeper._asks["VALE" if is_buy_vale else "VALBZ"]]))
-        buy_orders = list(sorted([i.price for i in bid_ask_bookkeeper._bids["VALBZ" if is_buy_vale else "VALE"]], reverse=True))
-
-        i = 0
-        while i < len(sell_orders) and i < len(buy_orders) and sell_orders[i] >= buy_orders[i]:
-            ret["buy"].append(sell_orders[i])
-            ret["sell"].append(buy_orders[i])
-            i += 1
-        
-        return ret
 
     # Store and print the "hello" message received from the exchange. This
     # contains useful information about your positions. Normally you start with
@@ -99,6 +84,7 @@ def main():
         # message because it can be a lot of information to read. Instead, let
         # your code handle the messages and just print the information
         # important for you!
+
         if message["type"] == "close":
             print("The round has ended")
             break
@@ -125,6 +111,39 @@ def main():
                 for ask in
                 message["sell"]
             ], instrument)
+
+            limit_buy_vale_sell_valbz = min(
+                positions.get_remaining_positions("VALE"),
+                positions.get_remaining_positions("VALBZ"),
+                bid_ask_bookkeeper.get_total_ask_quantity("VALE"),
+                bid_ask_bookkeeper.get_total_bid_quantity("VALBZ"),
+            )
+            limit_buy_valbz_sell_vale = min(
+                positions.get_remaining_positions("VALE"),
+                positions.get_remaining_positions("VALBZ"),
+                bid_ask_bookkeeper.get_total_bid_quantity("VALE"),
+                bid_ask_bookkeeper.get_total_ask_quantity("VALBZ"),
+            )
+
+            bid_vale, sell_vale_orders = bid_ask_bookkeeper.get_bid_price_limit("VALE", limit_buy_valbz_sell_vale)
+            bid_valbz, sell_valbz_orders = bid_ask_bookkeeper.get_bid_price_limit("VALBZ", limit_buy_vale_sell_valbz)
+            ask_vale, buy_vale_orders = bid_ask_bookkeeper.get_ask_price_limit("VALE", limit_buy_vale_sell_valbz)
+            ask_valbz, buy_valbz_orders = bid_ask_bookkeeper.get_ask_price_limit("VALBZ", limit_buy_valbz_sell_vale)
+
+            if ask_vale + 10 < bid_valbz:
+                for order in buy_vale_orders:
+                    exchange.send_add_message(get_order_id(), "VALE", Dir.BUY, order.price, order.quantity)
+                exchange.send_convert_message(get_order_id(), "VALE", Dir.SELL, limit_buy_vale_sell_valbz)
+                for order in sell_valbz_orders:
+                    exchange.send_add_message(get_order_id(), "VALBZ", Dir.SELL, order.price, order.quantity)
+
+            elif ask_valbz + 10 < bid_vale:
+                for order in buy_valbz_orders:
+                    exchange.send_add_message(get_order_id(), "VALBZ", Dir.BUY, order.price, order.quantity)
+                exchange.send_convert_message(get_order_id(), "VALE", Dir.BUY, limit_buy_valbz_sell_vale)
+                for order in sell_vale_orders:
+                    exchange.send_add_message(get_order_id(), "VALE", Dir.SELL, order.price, order.quantity)
+
         elif message["type"] == "trade":
             bid_ask_bookkeeper.account_for_trade(message["symbol"], Order(price=message["price"], quantity=message["size"]))
 
@@ -132,32 +151,6 @@ def main():
             last_log_time = now
             bid_ask_bookkeeper.console_log()
             positions.console_log()
-        
-        res = get_arbitrage_vale(True)
-        res2 = get_arbitrage_vale(False)
-
-        if len(res["buy"]) > 0:
-            limit = min(positions.get_remaining_positions("VALE", True), positions.get_remaining_positions("VALBZ", False), len(res["buy"]))
-            if limit == 0:
-                break
-            for i in range(limit):
-                p = res["buy"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, price=p, size=1)
-            for i in range(limit):
-                p = res["sell"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.SELL, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, size = limit)
-        elif len(res2["buy"]) > 0:
-            limit = min(positions.get_remaining_positions("VALE", False), positions.get_remaining_positions("VALBZ", True), len(res2["buy"]))
-            if limit == 0:
-                break
-            for i in range(limit):
-                p = res["buy"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=Dir.SELL, price=p, size=1)
-            for i in range(limit):
-                p = res["sell"][i]
-                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=Dir.BUY, price=p, size=1)
-            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=Dir.BUY, size = limit)
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
