@@ -58,6 +58,7 @@ def main():
         while i < len(sell_orders) and i < len(buy_orders) and sell_orders[i] >= buy_orders[i]:
             ret["buy"].append(sell_orders[i])
             ret["sell"].append(buy_orders[i])
+            i += 1
         
         return ret
 
