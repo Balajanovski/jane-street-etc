@@ -21,7 +21,7 @@ class BidAndAsk:
         return self._asks[instrument]
 
     def account_for_trade(self, instrument: str, order: Order):
-        if len(self._bids[instrument]) == 0 or self._bids[instrument][-1] < order.price:
+        if len(self._bids[instrument]) == 0 or self._bids[instrument][-1].price < order.price:
             target = self._asks
         else:
             target = self._bids
@@ -32,7 +32,6 @@ class BidAndAsk:
                 if existing_order.quantity == 0:
                     target.pop(i)
                 break
-                
 
     def console_log(self):
         print("Bids\n------")
@@ -40,4 +39,3 @@ class BidAndAsk:
 
         print("\nAsks\n------")
         print(json.dumps(self._asks, indent=4, sort_keys=True))
-    
