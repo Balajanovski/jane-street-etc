@@ -1,6 +1,7 @@
 from typing import List, Dict
 from book_keeping.order import Order
 import json
+import dataclasses
 
 
 class BidAndAsk:
@@ -37,7 +38,15 @@ class BidAndAsk:
 
     def console_log(self):
         print("Bids\n------")
-        print(json.dumps(self._bids, indent=4, sort_keys=True))
+        print(json.dumps(self._dictify(self._bids), indent=4, sort_keys=True))
 
         print("\nAsks\n------")
-        print(json.dumps(self._asks, indent=4, sort_keys=True))
+        print(json.dumps(self._dictify(self._asks), indent=4, sort_keys=True))
+
+    @staticmethod
+    def _dictify(all_orders):
+        return {
+            instrument: [dataclasses.asdict(order) for order in orders]
+            for instrument, orders in
+            all_orders.items()
+        }
