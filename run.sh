@@ -1,0 +1,1 @@
+while true; do python3.8 bot.py; sleep 5; done
