@@ -16,22 +16,26 @@ class BidAndAsk:
         self._asks[instrument] = asks
 
     def get_bids(self, instrument: str) -> List[Order]:
+        if instrument not in self._bids:
+            return []
         return self._bids[instrument]
 
     def get_total_bid_quantity(self, instrument: str) -> int:
-        return sum(order.quantity for order in self._bids[instrument])
+        return sum(order.quantity for order in self.get_bids(instrument))
 
     def get_bid_price_limit(self, instrument: str, limit: int) -> Tuple[float, List[Order]]:
-        return self._get_generic_price_limit(self._bids[instrument], limit)
+        return self._get_generic_price_limit(self.get_bids(instrument), limit)
 
     def get_asks(self, instrument: str) -> List[Order]:
+        if instrument not in self._asks:
+            return []
         return self._asks[instrument]
 
     def get_total_ask_quantity(self, instrument: str) -> int:
-        return sum(order.quantity for order in self._asks[instrument])
+        return sum(order.quantity for order in self.get_asks(instrument))
 
     def get_ask_price_limit(self, instrument: str, limit: int) -> Tuple[float, List[Order]]:
-        return self._get_generic_price_limit(self._asks[instrument], limit)
+        return self._get_generic_price_limit(self.get_asks(instrument), limit)
 
     def account_for_trade(self, instrument: str, order: Order):
         if len(self._bids[instrument]) == 0 or self._bids[instrument][-1].price < order.price:
