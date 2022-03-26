@@ -16,6 +16,8 @@ from book_keeping.order import Order
 from book_keeping.positions import Positions
 from book_keeping.directive import Dir
 
+from typing import List, Dict
+
 # ~~~~~============== CONFIGURATION  ==============~~~~~
 team_name = "BETTERTHANON"
 
@@ -30,6 +32,12 @@ team_name = "BETTERTHANON"
 # code is intended to be a working example, but it needs some improvement
 # before it will start making good trades!
 
+order_id = 0
+
+def get_order_id():
+    global order_id
+    order_id += 1
+    return order_id
 
 def main():
     args = parse_arguments()
@@ -37,6 +45,19 @@ def main():
     exchange = ExchangeConnection(args=args)
     bid_ask_bookkeeper = BidAndAsk()
     positions = Positions()
+
+    def get_arbitrage_vale(is_buy_vale: bool) -> Dict[str, List[Order]]:
+        ret = {"buy": [], "sell": []}
+
+        sell_orders = [i.price for i in bid_ask_bookkeeper._asks["VALE" if is_buy_vale else "VALBZ"]].sort()
+        buy_orders = [i.price for i in bid_ask_bookkeeper._bids["VALBZ" if is_buy_vale else "VALE"]].sort(reverse=True)
+
+        i = 0
+        while i < sell_orders and i < buy_orders and sell_orders[i] >= buy_orders[i]:
+            ret["buy"].append(sell_orders[i])
+            ret["sell"].append(buy_orders[i])
+        
+        return ret
 
     # Store and print the "hello" message received from the exchange. This
     # contains useful information about your positions. Normally you start with
@@ -108,6 +129,22 @@ def main():
             last_log_time = now
             bid_ask_bookkeeper.console_log()
             positions.console_log()
+        
+        res = get_arbitrage_vale(True)
+        res2 = get_arbitrage_vale(False)
+
+        if len(res["buy"]) > 0:
+            for p in res["buy"]:
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=dir.BUY, price=p, size=1)
+            for p in res["sell"]:
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=dir.SELL, price=p, size=1)
+            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=dir.SELL, size = len(res["buy"]))
+        elif len(res2["buy"]) > 0:
+            for p in res2["buy"]:
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALE", dir=dir.SELL, price=p, size=1)
+            for p in res2["sell"]:
+                exchange.send_add_message(order_id=get_order_id(), symbol="VALBZ", dir=dir.BUY, price=p, size=1)
+            exchange.send_convert_message(order_id=get_order_id(), symbol="VALE", dir=dir.BUY, size = len(res2["buy"]))
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
