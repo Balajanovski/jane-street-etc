@@ -13,7 +13,7 @@ import json
 
 # ~~~~~============== CONFIGURATION  ==============~~~~~
 # Replace "REPLACEME" with your team name!
-team_name = "Better than O(n!)"
+team_name = "BETTERTHANON"
 
 # ~~~~~============== MAIN LOOP ==============~~~~~
 
