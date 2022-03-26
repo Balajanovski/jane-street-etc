@@ -26,6 +26,38 @@ team_name = "BETTERTHANON"
 # code is intended to be a working example, but it needs some improvement
 # before it will start making good trades!
 
+limits = {
+    "BOND": 100,
+    "VALBZ": 10,
+    "VALE": 10,
+    "GS": 100,
+    "MS": 100,
+    "WFC": 100,
+    "XFL": 100,
+    "CASH": 1e18,
+}
+
+inven = {
+    "BOND": 0,
+    "VALBZ": 0,
+    "VALE": 0,
+    "GS": 0,
+    "MS": 0,
+    "WFC": 0,
+    "XFL": 0,
+    "CASH": 0,
+}
+
+sell_orders = {
+    "BOND": [],
+    "VALBZ": [],
+    "VALE": [],
+    "GS": [],
+    "MS": [],
+    "WFC": [],
+    "XFL": [],
+}
+
 def main():
     args = parse_arguments()
 
